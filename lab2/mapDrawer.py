@@ -30,7 +30,7 @@ def readFile():
 def drawMap(data):
     width_map = data[0]
     height_map = data[1]
-    distance_between_points = data[2]
+    distance_between_points = data[2] / 100
     heights = data[3]
 
     min_height = np.min(heights)
@@ -41,7 +41,12 @@ def drawMap(data):
     for i in range(height_map):
         for j in range(width_map):
             height = heights[i][j]
-            color = gradient_hsv(getMapVal(min_height, max_height, height))
+            if j == 0:
+                color = gradient_hsv(getMapVal(min_height, max_height, height), 0)
+            else:
+                neigh_height = heights[i][j - 1]
+                diff = neigh_height - height
+                color = gradient_hsv(getMapVal(min_height, max_height, height), getTgVal(diff, distance_between_points))
             map[i][j] = color
 
     plt.figure(figsize=(8, 8))
@@ -50,12 +55,23 @@ def drawMap(data):
     plt.savefig('mapa.pdf')
 
 
+def getTgVal(height, base):
+    tgAlfa = height / base
+    if tgAlfa > 0.25 or tgAlfa < -0.25:
+        return 1
+    else:
+        return 4 * tgAlfa
+
+
 def getMapVal(min_height, max_height, height):
     return (height - min_height) / (max_height - min_height)
 
 
-def gradient_hsv(v):
-    return hsv2rgb(1 / 3 - 1 / 3 * v, 1, 1)
+def gradient_hsv(v, tga):
+    if tga >= 0:
+        return hsv2rgb(1 / 3 - 1 / 3 * v, 1, 1 - tga)
+    else:
+        return hsv2rgb(1 / 3 - 1 / 3 * v, 1 + tga, 1)
 
 
 def hsv2rgb(h, s, v):
